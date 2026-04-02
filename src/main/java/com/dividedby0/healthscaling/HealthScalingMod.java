@@ -11,6 +11,7 @@ import com.dividedby0.healthscaling.item.ModItems;
 public class HealthScalingMod {
     public static final String MODID = "healthscaling";
 
+    @SuppressWarnings("removal")
     public HealthScalingMod() {
         // Initialize JSON5 config manager
         ConfigManager.getInstance();
