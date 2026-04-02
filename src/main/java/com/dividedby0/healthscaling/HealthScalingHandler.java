@@ -11,7 +11,9 @@ import net.minecraftforge.common.MinecraftForge;
 public class HealthScalingHandler {
 
     private static final String INITIALIZED_KEY = "HealthScaling_HealthInitialized";
-    private static final String TOTAL_HEARTS_KEY = "HealthScaling_TotalHearts";
+    private static final String TOTAL_HEARTS_KEY = "HealthScaling_TotalHearts"; // legacy key
+    private static final String XP_HEARTS_KEY = "HealthScaling_XPHearts";
+    private static final String BONUS_HEARTS_KEY = "HealthScaling_BonusHearts";
 
     public static void init() {
         MinecraftForge.EVENT_BUS.register(HealthScalingHandler.class);
@@ -25,9 +27,27 @@ public class HealthScalingHandler {
 
             if (!tag.getBoolean(INITIALIZED_KEY)) {
                 tag.putBoolean(INITIALIZED_KEY, true);
-                tag.putInt(TOTAL_HEARTS_KEY, 1); // start with 1 heart
+                tag.putInt(XP_HEARTS_KEY, 1);
+                tag.putInt(BONUS_HEARTS_KEY, 0);
             }
 
+            // Migrate from legacy total-heart storage to bonus-only storage.
+            if ((!tag.contains(XP_HEARTS_KEY) || !tag.contains(BONUS_HEARTS_KEY)) && tag.contains(TOTAL_HEARTS_KEY)) {
+                int legacyTotalHearts = tag.getInt(TOTAL_HEARTS_KEY);
+                int xpHearts = Math.min(legacyTotalHearts, Math.max(1, getHeartsFromLevel(player.experienceLevel)));
+                int bonusHearts = Math.max(0, legacyTotalHearts - xpHearts);
+                tag.putInt(XP_HEARTS_KEY, xpHearts);
+                tag.putInt(BONUS_HEARTS_KEY, bonusHearts);
+            }
+
+            if (!tag.contains(XP_HEARTS_KEY)) {
+                tag.putInt(XP_HEARTS_KEY, Math.max(1, getHeartsFromLevel(player.experienceLevel)));
+            }
+            if (!tag.contains(BONUS_HEARTS_KEY)) {
+                tag.putInt(BONUS_HEARTS_KEY, 0);
+            }
+
+            updateFromXP(player);
             applyHealth(player);
         }
     }
@@ -45,21 +65,21 @@ public class HealthScalingHandler {
 
         CompoundTag tag = player.getPersistentData();
 
-        int currentHearts = tag.getInt(TOTAL_HEARTS_KEY);
-        int level = player.experienceLevel;
+        int latchedXpHearts = Math.max(1, tag.getInt(XP_HEARTS_KEY));
+        int targetHearts = getHeartsFromLevel(player.experienceLevel);
 
-        int targetHearts = getHeartsFromLevel(level);
-
-        // Only increase if XP would give MORE than current
-        if (targetHearts > currentHearts) {
-            tag.putInt(TOTAL_HEARTS_KEY, targetHearts);
+        // XP hearts are latched: they can only go up, never down.
+        if (targetHearts > latchedXpHearts) {
+            tag.putInt(XP_HEARTS_KEY, targetHearts);
         }
     }
 
     private static void applyHealth(ServerPlayer player) {
 
         CompoundTag tag = player.getPersistentData();
-        int hearts = tag.getInt(TOTAL_HEARTS_KEY);
+        int xpHearts = Math.max(1, tag.getInt(XP_HEARTS_KEY));
+        int bonusHearts = Math.max(0, tag.getInt(BONUS_HEARTS_KEY));
+        int hearts = xpHearts + bonusHearts;
 
         double maxHealth = hearts * 2.0;
 
@@ -87,10 +107,7 @@ public class HealthScalingHandler {
     public static void addHeart(ServerPlayer player) {
         CompoundTag tag = player.getPersistentData();
 
-        int hearts = tag.getInt(TOTAL_HEARTS_KEY);
-
-        if (hearts < 15) {
-            tag.putInt(TOTAL_HEARTS_KEY, hearts + 1);
-        }
+        int bonusHearts = Math.max(0, tag.getInt(BONUS_HEARTS_KEY));
+        tag.putInt(BONUS_HEARTS_KEY, bonusHearts + 1);
     }
 }

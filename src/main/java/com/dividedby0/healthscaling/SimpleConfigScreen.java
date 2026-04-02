@@ -1,16 +1,19 @@
 package com.dividedby0.healthscaling;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import com.dividedby0.healthscaling.config.JSON5ConfigManager;
+
+import java.util.function.IntConsumer;
 
 public class SimpleConfigScreen extends Screen {
     private final Screen previousScreen;
     private final JSON5ConfigManager configManager;
-    private EditBox xpCsvInput;
+    private final int[] xpThresholds = new int[9];
 
     public SimpleConfigScreen(Screen previousScreen, JSON5ConfigManager configManager) {
         super(Component.literal("Health Scaling Configuration"));
@@ -20,23 +23,33 @@ public class SimpleConfigScreen extends Screen {
 
     @Override
     protected void init() {
-        int centerX = this.width / 2;
-        int labelX = centerX - 190;
-        int inputX = centerX + 10;
-        int y = 80;
+        this.clearWidgets();
 
-        // XP heart requirements as a single CSV field
-        StringBuilder csv = new StringBuilder();
-        for (int i = 1; i <= 9; i++) {
-            if (i > 1) csv.append(",");
-            csv.append(configManager.getInt("xpThreshold_" + i, 10 * i));
+        for (int i = 0; i < 9; i++) {
+            xpThresholds[i] = configManager.getInt("xpThreshold_" + (i + 1), 10 * (i + 1));
         }
-        this.xpCsvInput = new EditBox(this.font, inputX, y, 300, 20,
-                Component.literal("XP Heart Thresholds (CSV)"));
-        this.xpCsvInput.setValue(csv.toString());
-        this.addRenderableWidget(this.xpCsvInput);
 
-        // Save and Back buttons at bottom
+        int centerX = this.width / 2;
+        int leftX = centerX - 155;
+        int rightX = centerX + 5;
+        int y = 36;
+        int rowH = 24;
+
+        for (int i = 0; i < 9; i++) {
+            int index = i;
+            int sliderX = (i % 2 == 0) ? leftX : rightX;
+            int sliderY = y + (i / 2) * rowH;
+            addIntSlider(
+                    sliderX,
+                    sliderY,
+                    "Heart " + (i + 1) + " XP",
+                    1,
+                    500,
+                    xpThresholds[i],
+                    value -> xpThresholds[index] = value
+            );
+        }
+
         int buttonY = this.height - 40;
         this.addRenderableWidget(Button.builder(Component.literal("Save"), (btn) -> this.save())
                 .bounds(centerX - 110, buttonY, 100, 20).build());
@@ -48,27 +61,56 @@ public class SimpleConfigScreen extends Screen {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 20, 0xFFFFFF);
-        int labelX = this.width / 2 - 190;
-        int y = 60;
-        guiGraphics.drawString(this.font, "XP Heart Requirements (CSV, 9 values, 2-15 hearts):", labelX, y, 0xFFCC66);
-        guiGraphics.drawString(this.font, "Defaults: 10,20,30,40,50,75,100,150,200", labelX, y + 14, 0x888888);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
     }
 
     private void save() {
-        String[] xpVals = this.xpCsvInput.getValue().split(",");
-        for (int i = 1; i <= 9; i++) {
-            int value = 10 * i;
-            if (xpVals.length >= i) {
-                try {
-                    value = Integer.parseInt(xpVals[i - 1].trim());
-                } catch (NumberFormatException ignore) {
-                }
-            }
-            configManager.setInt("xpThreshold_" + i, value);
+        for (int i = 0; i < 9; i++) {
+            configManager.setInt("xpThreshold_" + (i + 1), Mth.clamp(xpThresholds[i], 1, 500));
         }
         configManager.saveConfig();
         this.onClose();
+    }
+
+    private IntSlider addIntSlider(int x, int y, String title, int min, int max, int value, IntConsumer onChange) {
+        return this.addRenderableWidget(new IntSlider(x, y, 150, 20, title, min, max, value, onChange));
+    }
+
+    private static class IntSlider extends AbstractSliderButton {
+        private final String title;
+        private final int min;
+        private final int max;
+        private final IntConsumer onChange;
+
+        IntSlider(int x, int y, int width, int height, String title, int min, int max, int value, IntConsumer onChange) {
+            super(x, y, width, height, Component.empty(), toSlider(value, min, max));
+            this.title = title;
+            this.min = min;
+            this.max = max;
+            this.onChange = onChange;
+            this.updateMessage();
+        }
+
+        @Override
+        protected void updateMessage() {
+            this.setMessage(Component.literal(this.title + ": " + this.toValue()));
+        }
+
+        @Override
+        protected void applyValue() {
+            this.onChange.accept(this.toValue());
+        }
+
+        private int toValue() {
+            return Mth.clamp((int) Math.round(this.min + (this.max - this.min) * this.value), this.min, this.max);
+        }
+
+        private static double toSlider(int value, int min, int max) {
+            if (max <= min) {
+                return 0.0;
+            }
+            return Mth.clamp((value - (double) min) / (double) (max - min), 0.0, 1.0);
+        }
     }
 
     @Override
