@@ -3,6 +3,7 @@ package com.dividedby0.healthscaling;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -23,7 +24,7 @@ public class HealthScalingHandler {
     public static void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
 
-            CompoundTag tag = player.getPersistentData();
+            CompoundTag tag = getModData(player);
 
             if (!tag.getBoolean(INITIALIZED_KEY)) {
                 tag.putBoolean(INITIALIZED_KEY, true);
@@ -53,6 +54,14 @@ public class HealthScalingHandler {
     }
 
     @SubscribeEvent
+    public static void onPlayerClone(PlayerEvent.Clone event) {
+        CompoundTag originalData = event.getOriginal().getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+        if (!originalData.isEmpty()) {
+            event.getEntity().getPersistentData().put(Player.PERSISTED_NBT_TAG, originalData.copy());
+        }
+    }
+
+    @SubscribeEvent
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (!(event.player instanceof ServerPlayer player)) return;
         if (event.phase != TickEvent.Phase.END) return;
@@ -63,7 +72,7 @@ public class HealthScalingHandler {
 
     private static void updateFromXP(ServerPlayer player) {
 
-        CompoundTag tag = player.getPersistentData();
+        CompoundTag tag = getModData(player);
 
         int latchedXpHearts = Math.max(1, tag.getInt(XP_HEARTS_KEY));
         int targetHearts = getHeartsFromLevel(player.experienceLevel);
@@ -76,7 +85,7 @@ public class HealthScalingHandler {
 
     private static void applyHealth(ServerPlayer player) {
 
-        CompoundTag tag = player.getPersistentData();
+        CompoundTag tag = getModData(player);
         int xpHearts = Math.max(1, tag.getInt(XP_HEARTS_KEY));
         int bonusHearts = Math.max(0, tag.getInt(BONUS_HEARTS_KEY));
         int hearts = xpHearts + bonusHearts;
@@ -105,9 +114,17 @@ public class HealthScalingHandler {
     }
 
     public static void addHeart(ServerPlayer player) {
-        CompoundTag tag = player.getPersistentData();
+        CompoundTag tag = getModData(player);
 
         int bonusHearts = Math.max(0, tag.getInt(BONUS_HEARTS_KEY));
         tag.putInt(BONUS_HEARTS_KEY, bonusHearts + 1);
+
+        applyHealth(player);
+    }
+
+    private static CompoundTag getModData(Player player) {
+        CompoundTag persisted = player.getPersistentData().getCompound(Player.PERSISTED_NBT_TAG);
+        player.getPersistentData().put(Player.PERSISTED_NBT_TAG, persisted);
+        return persisted;
     }
 }
