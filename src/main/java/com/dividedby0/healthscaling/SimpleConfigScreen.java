@@ -16,7 +16,7 @@ public class SimpleConfigScreen extends Screen {
     private final int[] xpThresholds = new int[9];
 
     public SimpleConfigScreen(Screen previousScreen, JSON5ConfigManager configManager) {
-        super(Component.literal("Health Scaling Configuration"));
+        super(Component.literal("More Health Configuration"));
         this.previousScreen = previousScreen;
         this.configManager = configManager;
     }

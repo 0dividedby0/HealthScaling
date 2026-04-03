@@ -1,6 +1,8 @@
-# Health Scaling Mod
+# More Health Mod
 
 A Minecraft Forge mod for Minecraft 1.20.1 that scales player health with XP level. Players start with 1 heart and gain more through leveling up or consuming Heart Container items.
+
+Current release channel: **Beta** (`1.0.0-beta.1`).
 
 ## Features
 
@@ -9,6 +11,12 @@ A Minecraft Forge mod for Minecraft 1.20.1 that scales player health with XP lev
 - Configurable XP thresholds for each heart tier (up to 15 hearts)
 - Heart Container item: consume to instantly gain 1 heart
 - In-game config screen accessible from the Mods menu
+
+## Compatibility
+
+- Minecraft: `1.20.1`
+- Forge: `47.4.10+`
+- Java: `17`
 
 ## Default XP Thresholds
 
@@ -91,7 +99,7 @@ This project is based on the Forge MDK for 1.20.1-47.4.10. If starting from scra
 ./gradlew build
 ```
 
-This will generate the JAR at `build/libs/healthscaling-1.0.0.jar`. Copy it to your Prism Launcher instance's mods folder to install.
+This will generate the JAR at `build/libs/healthscaling-1.0.0-beta.1.jar`. Copy it to your Prism Launcher instance's mods folder to install.
 
 ## Running the Mod
 
@@ -147,3 +155,30 @@ src/main/java/com/dividedby0/healthscaling/
 - If you get Java version errors, ensure OpenJDK 17 is properly installed and PATH is set
 - For Gradle issues, try `./gradlew --no-daemon clean build`
 - Ensure you're using Forge 47.4.10 for Minecraft 1.20.1
+
+## Project Links
+
+- Repository: https://github.com/0dividedby0/MoreHealth
+- Issues: https://github.com/0dividedby0/MoreHealth/issues
+
+Note: The internal mod ID remains `healthscaling` for save/config compatibility.
+
+## Release Notes (1.0.0-beta.1)
+
+- Initial beta release on Forge 1.20.1.
+- Added XP-to-hearts scaling system.
+- Added nine configurable XP milestone thresholds.
+- Added Heart Container item for permanent bonus hearts.
+- Added persistent NBT data and migration handling.
+- Added in-game configuration screen.
+
+## License
+
+MIT License — see [LICENSE](LICENSE) for full text.
+
+## Credits
+
+Inspired by **More Health Enchanted** by nohero.
+Original mod thread: https://www.minecraftforum.net/forums/mapping-and-modding-java-edition/minecraft-mods/1272363
+
+This mod is an independent, ground-up rewrite for Minecraft Forge 1.20.1 and shares no code or assets with the original.
