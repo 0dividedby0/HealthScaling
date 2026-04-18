@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows semantic versioning.
 
+## [1.0.0-beta.2] - 2026-04-18
+
+### Changed
+- Updated config initialization to use Forge's config directory path so the mod behaves correctly in shared dev-pack runs and other nonstandard launch environments.
+
 ## [1.0.0-beta.1] - 2026-04-02
 
 ### Added

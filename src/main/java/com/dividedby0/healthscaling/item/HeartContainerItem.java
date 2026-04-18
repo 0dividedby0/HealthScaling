@@ -10,7 +10,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.player.Player;
 
 public class HeartContainerItem extends Item {
-
     public HeartContainerItem(Properties properties) {
         super(properties);
     }
